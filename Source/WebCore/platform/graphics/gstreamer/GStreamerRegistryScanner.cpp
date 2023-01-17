@@ -84,6 +84,8 @@ GStreamerRegistryScanner::~GStreamerRegistryScanner()
 GStreamerRegistryScanner::RegistryLookupResult GStreamerRegistryScanner::hasElementForMediaType(GList* elementFactories, const char* capsString, bool shouldCheckHardwareClassifier, Optional<Vector<String>> blackList) const
 {
     GRefPtr<GstCaps> caps = adoptGRef(gst_caps_from_string(capsString));
+    if (!caps)
+        return { };
     GList* candidates = gst_element_factory_list_filter(elementFactories, caps.get(), GST_PAD_SINK, false);
     bool isSupported = candidates;
     bool isUsingHardware = false;
@@ -109,6 +111,16 @@ GStreamerRegistryScanner::RegistryLookupResult GStreamerRegistryScanner::hasElem
             auto* factory = reinterpret_cast<GstElementFactory*>(factories->data);
 #if PLATFORM(BCM_NEXUS) || PLATFORM(BROADCOM)
             if (g_str_has_prefix(GST_OBJECT_NAME(factory), "brcm")) {
+                isUsingHardware = true;
+                break;
+            }
+#elif PLATFORM(REALTEK)
+            if (g_str_has_prefix(GST_OBJECT_NAME(factory), "omx")) {
+                isUsingHardware = true;
+                break;
+            }
+#elif USE(WESTEROS_SINK)
+            if (g_str_has_prefix(GST_OBJECT_NAME(factory), "westeros")) {
                 isUsingHardware = true;
                 break;
             }
